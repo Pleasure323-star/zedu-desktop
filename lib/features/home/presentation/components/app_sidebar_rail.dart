@@ -198,41 +198,43 @@ class _RailNavItemState extends State<_RailNavItem> {
         ? null
         : SidebarPopoutHost.of(context);
 
-    return InkWell(
-      onTap: widget.onTap,
-      onHover: popouts == null
-          ? null
-          : (hovered) => popouts.onRailHover(widget.popoutType!, hovered),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
-        child: Column(
-          children: [
-            MouseRegion(
-              onEnter: (_) => setState(() => _hovered = true),
-              onExit: (_) => setState(() => _hovered = false),
-              child: Container(
-                key: widget.positionKey,
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: (widget.isActive || _hovered)
-                      ? colors.primary.withValues(alpha: 0.95)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(7),
+    return SizedBox(
+      width: double.infinity,
+      child: InkWell(
+        onTap: widget.onTap,
+        onHover: popouts == null
+            ? null
+            : (hovered) => popouts.onRailHover(widget.popoutType!, hovered),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+          child: Column(
+            children: [
+              MouseRegion(
+                onEnter: (_) => setState(() => _hovered = true),
+                onExit: (_) => setState(() => _hovered = false),
+                child: Container(
+                  key: widget.positionKey,
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: (widget.isActive || _hovered)
+                        ? colors.primary.withValues(alpha: 0.95)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                  child: Icon(widget.icon, color: colors.onPrimary, size: 20),
                 ),
-                child: Icon(widget.icon, color: colors.onPrimary, size: 18),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              widget.label,
-              style: TextStyle(
-                color: colors.onPrimary.withValues(alpha: 0.92),
-                fontSize: 9,
-                fontWeight: FontWeight.w500,
+              const SizedBox(height: 4),
+              Text(
+                widget.label,
+                style: context.textTheme.labelSmall?.copyWith(
+                  color: colors.onPrimary.withValues(alpha: 0.92),
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -275,7 +277,7 @@ class _RailBottomIcon extends StatelessWidget {
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(7),
               ),
-              child: Icon(icon, color: colors.onPrimary, size: 18),
+              child: Icon(icon, color: colors.onPrimary, size: 20),
             ),
             if (hasNotification)
               Positioned(
