@@ -289,22 +289,36 @@ class _MessageComposerState extends ConsumerState<MessageComposer> {
                   tooltip: 'Attach file',
                 ),
                 Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    focusNode: _focusNode,
-                    onChanged: _onTextChanged,
-                    minLines: 1,
-                    maxLines: 8,
-                    style: TextStyle(color: colors.textPrimary, fontSize: 15),
-                    decoration: InputDecoration(
-                      hintText: widget.activeChat.type == ActiveChatType.groupDm
-                          ? 'Message group...'
-                          : 'Message #${widget.activeChat.id ?? "general"}',
-                      hintStyle: TextStyle(color: colors.textHint),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Focus(
+                    onKeyEvent: (node, event) {
+                      if (event is! KeyDownEvent) return KeyEventResult.ignored;
+                      final key = event.logicalKey;
+                      // Allow submitting with Ctrl/Cmd+Enter like the DM composer.
+                      if (key == LogicalKeyboardKey.enter &&
+                          (HardwareKeyboard.instance.isControlPressed ||
+                              HardwareKeyboard.instance.isMetaPressed)) {
+                        _handleSend();
+                        return KeyEventResult.handled;
+                      }
+                      return KeyEventResult.ignored;
+                    },
+                    child: TextField(
+                      controller: _controller,
+                      focusNode: _focusNode,
+                      onChanged: _onTextChanged,
+                      minLines: 1,
+                      maxLines: 8,
+                      style: TextStyle(color: colors.textPrimary, fontSize: 15),
+                      decoration: InputDecoration(
+                        hintText: widget.activeChat.type == ActiveChatType.groupDm
+                            ? 'Message group...'
+                            : 'Message #${widget.activeChat.id ?? "general"}',
+                        hintStyle: TextStyle(color: colors.textHint),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      onSubmitted: (_) => _handleSend(),
                     ),
-                    onSubmitted: (_) => _handleSend(),
                   ),
                 ),
                 if (_controller.text.isEmpty && !_isRecording)
