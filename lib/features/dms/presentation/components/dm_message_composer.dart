@@ -217,7 +217,10 @@ class DmMessageComposerState extends ConsumerState<DmMessageComposer> {
       return;
     }
     final before = text.substring(0, sel.baseOffset);
-    final atMatch = RegExp(r'@(\w*)$').firstMatch(before);
+    // Match an @-mention only when it appears at the start of the text or
+    // after whitespace. This prevents matching email addresses like
+    // "user@domain.com" while the user is typing an email.
+    final atMatch = RegExp(r'(?:^|\s)@(\w*)$').firstMatch(before);
     if (atMatch == null) {
       setState(() {
         _mentionSuggestions = [];
