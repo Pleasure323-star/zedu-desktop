@@ -16,8 +16,14 @@ class AppRouter {
   static const createOrganization = '/create-organization';
   static const buyCredits = '/credits/buy';
 
+  /// The root Navigator. Widgets mounted from [App]'s `builder` sit above the
+  /// Navigator, so they reach the Overlay and the router through this key
+  /// instead of through their own context.
+  static final navigatorKey = GlobalKey<NavigatorState>();
+
   static final router = GoRouter(
     initialLocation: login,
+    navigatorKey: navigatorKey,
     routes: [
       GoRoute(path: login, builder: (context, state) => const LoginView()),
       GoRoute(

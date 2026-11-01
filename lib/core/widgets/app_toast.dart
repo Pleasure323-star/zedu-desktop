@@ -10,10 +10,29 @@ class AppToastService {
     required AppToastType type,
     required String message,
   }) {
+    _show(Overlay.of(context), type: type, message: message);
+  }
+
+  /// For callers mounted above the Navigator, where [BuildContext] has no
+  /// Overlay ancestor yet, such as the deep-link listeners in `App`'s builder.
+  static void showAtRoot(
+    NavigatorState navigator, {
+    required AppToastType type,
+    required String message,
+  }) {
+    final overlay = navigator.overlay;
+    if (overlay == null) return;
+    _show(overlay, type: type, message: message);
+  }
+
+  static void _show(
+    OverlayState overlay, {
+    required AppToastType type,
+    required String message,
+  }) {
     _current?.remove();
     _current = null;
 
-    final overlay = Overlay.of(context);
     late OverlayEntry entry;
     entry = OverlayEntry(
       builder: (ctx) {
