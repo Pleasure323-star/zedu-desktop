@@ -35,6 +35,12 @@ class _MagicLinkRequestViewState extends ConsumerState<MagicLinkRequestView> {
 
     final error = ref.read(magicLinkNotifierProvider).error;
     final message = switch (error) {
+      // The backend signals "no account for this email" with a 404. Show a
+      // fixed, friendly message instead of the generic "The resource was not
+      // found." so the user knows the link was never sent, without putting raw
+      // server text (an HTML 404 page or Dio's error) on screen (zeduchat#44).
+      ApiFailure(kind: ApiFailureKind.notFound) =>
+        "We couldn't find an account with that email.",
       ApiFailure() => error.friendlyMessage,
       Object() => error.toString(),
       null => 'Could not send magic link. Please try again.',
@@ -111,6 +117,8 @@ class _MagicLinkRequestViewState extends ConsumerState<MagicLinkRequestView> {
                           style: context.textTheme.bodyMedium?.copyWith(
                             color: context.colors.primary,
                           ),
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = () => context.push(AppRouter.signup),
                         ),
                       ],
                     ),

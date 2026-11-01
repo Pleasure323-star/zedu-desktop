@@ -2,6 +2,7 @@ export 'data/datasources/channel_remote_datasource.dart';
 export 'data/repositories/channel_repository_impl.dart';
 export 'domain/repositories/channel_repository.dart';
 export 'domain/entities/channel.dart';
+export 'presentation/providers/add_everyone_provider.dart';
 export 'presentation/providers/channel_provider.dart';
 export 'presentation/widgets/create_channel_modal.dart';
 export 'presentation/widgets/edit_channel_modal.dart';

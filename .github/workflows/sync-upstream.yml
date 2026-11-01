@@ -1,0 +1,46 @@
+name: Sync upstream
+
+# Caller: the logic lives in zedu-hng/zedu-ci (upstream-sync.yml), pinned by commit. Review-org only.
+# Keeps the chain upstream -> central-staging -> dev in sync with merge commits. A merge that conflicts
+# or changes review-org paths (.github/upstream-exclude) opens a sync PR for a reviewer; its body says
+# how to finish (re-run with approve_protected or resolution). Don't merge sync PRs by hand.
+# Config (set only in the review org, so contributor forks skip this):
+#   vars.UPSTREAM_REPO      e.g. zeduchat/zedu-desktop
+#   vars.UPSTREAM_BRANCH    branch that batches go to upstream (default: central-staging)
+#   secrets.SYNC_DEPLOY_KEY write deploy key, a bypass actor on the dev and central-staging rulesets
+# Requires Settings -> Actions -> "Allow GitHub Actions to create and approve pull requests".
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      approve_protected:
+        description: A reviewer checked the sync PR's review-org path changes; merge them
+        type: boolean
+        default: false
+      resolution:
+        description: 'Conflict resolved on a branch: <target>:<branch>, e.g. dev:sync-fix'
+        required: false
+
+permissions: {}
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Sync branches
+    if: vars.UPSTREAM_REPO != ''
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: zedu-hng/zedu-ci/.github/workflows/upstream-sync.yml@4e68db81f7dc1ecfbb656308c1a9e9b718eaae0c
+    with:
+      upstream_repo: ${{ vars.UPSTREAM_REPO }}
+      upstream_branch: ${{ vars.UPSTREAM_BRANCH || 'central-staging' }}
+      approve_protected: ${{ inputs.approve_protected || false }}
+      resolution: ${{ inputs.resolution || '' }}
+    secrets:
+      SYNC_DEPLOY_KEY: ${{ secrets.SYNC_DEPLOY_KEY }}

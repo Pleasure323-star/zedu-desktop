@@ -23,8 +23,8 @@ class OrganizationSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const ProfileSectionHeader(
-          title: 'Your Organisation Information',
-          subtitle: 'Manage your organisation details.',
+          title: 'Your Organization Information',
+          subtitle: 'Manage your organization details.',
         ),
         const SizedBox(height: 28),
         ProfileCard(

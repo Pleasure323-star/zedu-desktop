@@ -12,7 +12,9 @@ class App extends ConsumerWidget {
       theme: AppTheme.light,
       routerConfig: AppRouter.router,
       builder: (context, child) => CreditsPaymentDeepLinkListener(
-        child: AuthDeepLinkListener(child: child ?? const SizedBox.shrink()),
+        child: AuthDeepLinkListener(
+          child: QuickSwitcherShortcut(child: child ?? const SizedBox.shrink()),
+        ),
       ),
     );
   }

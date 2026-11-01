@@ -22,6 +22,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
   }
 
   Future<void> _onLoginPressed() async {
+    if (ref.read(authNotifierProvider).isLoading) return;
     if (!_formKey.currentState!.validate()) return;
 
     ref
@@ -29,6 +30,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
         .login(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
+          rememberMe: _rememberMe,
         );
   }
 
@@ -79,7 +81,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
               Image.asset('assets/pngs/zedu_logo.png', width: 83, height: 31),
               Text.rich(
                 TextSpan(
-                  text: 'Already have an account? ',
+                  text: "Don't have an account? ",
                   style: context.textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.w400,
                     color: context.colors.textPrimary,
@@ -123,14 +125,15 @@ class _LoginViewState extends ConsumerState<LoginView> {
                 context.gapV(32),
                 SocialAuthButton(
                   icon: 'assets/svgs/google_logo.svg',
-                  label: 'Sign up with Google',
+                  label: 'Sign in with Google',
+                  loading: authState.isLoading,
                   onPressed: () =>
                       ref.read(authNotifierProvider.notifier).loginWithGoogle(),
                 ),
                 context.gapV(12),
                 SocialAuthButton(
                   icon: 'assets/svgs/apple_logo.svg',
-                  label: 'Sign up with Apple',
+                  label: 'Sign in with Apple',
                   onPressed: () => AppToastService.show(
                     context,
                     type: AppToastType.info,
@@ -193,8 +196,12 @@ class _LoginViewState extends ConsumerState<LoginView> {
                         label: 'Password',
                         hint: 'Password',
                         textInputAction: TextInputAction.done,
-                        validator: (value) =>
-                            Validators.validatePassword(context, value),
+                        onFieldSubmitted: (_) => _onLoginPressed(),
+                        validator: (value) => Validators.validateRequired(
+                          context,
+                          value?.trim(),
+                          fieldName: 'Password',
+                        ),
                       ),
                       context.gapV(8),
                       Row(

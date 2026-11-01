@@ -1,0 +1,17 @@
+# GitHub Actions only. App dependencies are upgraded by ticket, not by bot.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+      include: scope
+    labels:
+      - review-org-only
+      - config-change-approved
+    groups:
+      actions:
+        patterns: ["*"]

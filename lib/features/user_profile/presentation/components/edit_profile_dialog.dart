@@ -31,6 +31,14 @@ const List<String> _kTimezones = [
   '(UTC+12:00) Auckland, Wellington, Fiji',
 ];
 
+String _canonicalCountryName(String value) {
+  final trimmedValue = value.trim();
+  return kCountries.firstWhere(
+    (country) => country.toLowerCase() == trimmedValue.toLowerCase(),
+    orElse: () => trimmedValue,
+  );
+}
+
 Future<void> showEditProfileDialog(
   BuildContext context,
   ProfileAccount account,
@@ -189,10 +197,10 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
                                 if (v == null || v.trim().isEmpty) {
                                   return 'Email is required';
                                 }
-                                if (!v.contains('@')) {
-                                  return 'Enter a valid email';
-                                }
-                                return null;
+                                return Validators.validateEmail(
+                                  context,
+                                  v.trim(),
+                                );
                               },
                             ),
                             const SizedBox(height: 16),
@@ -296,6 +304,18 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
                                     return TextFormField(
                                       controller: controller,
                                       focusNode: focusNode,
+                                      onChanged: (value) => selectedCountry =
+                                          _canonicalCountryName(value),
+                                      validator: (value) {
+                                        final country = _canonicalCountryName(
+                                          value ?? '',
+                                        );
+                                        if (country.isEmpty ||
+                                            kCountries.contains(country)) {
+                                          return null;
+                                        }
+                                        return 'Select a country from the list';
+                                      },
                                       decoration: InputDecoration(
                                         hintText: 'Search or select a country',
                                         hintStyle: context.textTheme.bodySmall
@@ -477,7 +497,7 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
                   ),
                   const SizedBox(width: 12),
                   AppButton(
-                    label: 'Save Changes',
+                    label: 'Save changes',
                     expand: false,
                     height: 40,
                     onPressed: () {
@@ -492,7 +512,7 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
                             title: titleCtrl.text.trim(),
                             namePronunciation: pronunciationCtrl.text.trim(),
                             timezone: selectedTimezone,
-                            country: selectedCountry,
+                            country: _canonicalCountryName(selectedCountry),
                           ),
                         );
                         Navigator.pop(context);

@@ -1,0 +1,31 @@
+name: PR checks
+
+# Caller: the logic lives in zedu-hng/zedu-ci (pr-checks-flutter.yml), pinned by commit. This file sets the
+# triggers, concurrency and token permissions. Keep the file name: other workflows look it up.
+# Replaces Zedu's Vulnerability check pipeline and Security Scans (disabled
+# in zedu-hng; their files stay as upstream). Runs PR code with a read-only token.
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - central-staging
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+
+permissions: {}
+
+concurrency:
+  group: pr-checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: PR checks
+    if: github.repository == 'zedu-hng/zedu-desktop'
+    permissions:
+      contents: read
+    uses: zedu-hng/zedu-ci/.github/workflows/pr-checks-flutter.yml@4e68db81f7dc1ecfbb656308c1a9e9b718eaae0c

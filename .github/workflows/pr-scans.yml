@@ -1,0 +1,33 @@
+name: PR scans
+
+# Caller: the logic lives in zedu-hng/zedu-ci (pr-scans.yml), pinned by commit. This file sets the
+# triggers, concurrency and token permissions. Keep the file name: other workflows look it up.
+# ClamAV and the obfuscation scan on every PR. No Semgrep: its rules are weak on Dart, so no rule
+# packs are passed and that step is skipped.
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - central-staging
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+
+permissions: {}
+
+concurrency:
+  group: pr-scans-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  scans:
+    name: PR scans
+    if: github.repository == 'zedu-hng/zedu-desktop'
+    permissions:
+      contents: read
+    uses: zedu-hng/zedu-ci/.github/workflows/pr-scans.yml@4e68db81f7dc1ecfbb656308c1a9e9b718eaae0c
+    with:
+      clamav_exclude_dirs: build .dart_tool android/.gradle ios/Pods macos/Pods

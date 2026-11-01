@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:zedu/core/core.dart';
 
 class NotificationSettings {
@@ -25,16 +27,24 @@ class NotificationSettings {
 }
 
 class NotificationSettingsNotifier extends Notifier<NotificationSettings> {
+  Timer? _dndExpiry;
+
   @override
   NotificationSettings build() {
+    ref.onDispose(() => _dndExpiry?.cancel());
     return const NotificationSettings();
   }
 
+  /// Pauses notifications; the pause ends by itself when it runs out.
   void setDndMode(Duration duration) {
     state = state.copyWith(dndUntil: DateTime.now().add(duration));
+    _dndExpiry?.cancel();
+    _dndExpiry = Timer(duration, clearDndMode);
   }
 
   void clearDndMode() {
+    _dndExpiry?.cancel();
+    _dndExpiry = null;
     state = NotificationSettings(
       dndUntil: null,
       mutedParticipantIds: state.mutedParticipantIds,

@@ -142,7 +142,7 @@ class _CreateOrganizationViewState
                     controller: _nameController,
                     enabled: !isLoading,
                     decoration: InputDecoration(
-                      hintText: 'Enter your organization Name',
+                      hintText: 'Enter your organization name',
                       hintStyle: TextStyle(color: colors.textHint),
                       filled: true,
                       fillColor: Colors.white,
@@ -186,7 +186,7 @@ class _CreateOrganizationViewState
                     controller: _typeController,
                     enabled: !isLoading,
                     decoration: InputDecoration(
-                      hintText: 'What does your organization do',
+                      hintText: 'What does your organization do?',
                       hintStyle: TextStyle(color: colors.textHint),
                       filled: true,
                       fillColor: Colors.white,

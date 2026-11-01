@@ -19,6 +19,29 @@ void main() {
     });
   });
 
+  group('OrganizationProfileModel', () {
+    test('reads the organisation endpoint name, type and country', () {
+      final organization = OrganizationProfileModel.fromJson(const {
+        'id': 'org-1',
+        'name': 'HNG Internship',
+        'type': 'Education',
+        'country': 'Nigeria',
+      });
+
+      expect(organization.name, 'HNG Internship');
+      expect(organization.natureOfBusiness, 'Education');
+      expect(organization.country, 'Nigeria');
+    });
+
+    test('does not invent demo values for missing fields', () {
+      final organization = OrganizationProfileModel.fromJson(const {});
+
+      expect(organization.name, isEmpty);
+      expect(organization.natureOfBusiness, isEmpty);
+      expect(organization.country, isEmpty);
+    });
+  });
+
   group('NotificationPreferencesModel', () {
     test('maps notification mode and desktop/email preferences', () {
       final preferences = NotificationPreferencesModel.fromJson(const {

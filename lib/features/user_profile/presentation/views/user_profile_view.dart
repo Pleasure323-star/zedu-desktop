@@ -49,6 +49,7 @@ class _ProfileContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final organization = state.organization;
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(28, 32, 40, 48),
       child: Align(
@@ -74,13 +75,19 @@ class _ProfileContent extends StatelessWidget {
               isSaving: state.isSaving,
               onChangePassword: notifier.changePassword,
             ),
-            UserProfileSection.organization => OrganizationSection(
-              organization: state.organization ?? OrganizationProfile.empty(),
-              isSaving: state.isSaving,
-              onSave: notifier.updateOrganization,
-              onDelete: notifier.deleteOrganization,
-              onLeave: notifier.leaveOrganization,
-            ),
+            UserProfileSection.organization =>
+              organization == null
+                  ? _OrganizationLoadError(
+                      isLoading: state.isLoading,
+                      onRetry: notifier.load,
+                    )
+                  : OrganizationSection(
+                      organization: organization,
+                      isSaving: state.isSaving,
+                      onSave: notifier.updateOrganization,
+                      onDelete: notifier.deleteOrganization,
+                      onLeave: notifier.leaveOrganization,
+                    ),
             UserProfileSection.userManagement => UserManagementSection(
               members: state.teamMembers,
               isSaving: state.isSaving,
@@ -92,10 +99,43 @@ class _ProfileContent extends StatelessWidget {
               RolesAndPermissionsSection(roles: state.rolesAndPermissions),
             UserProfileSection.billing => BillingSection(
               billing: state.billing ?? BillingInfo.empty(),
+              onInvite: notifier.inviteMember,
             ),
           },
         ),
       ),
+    );
+  }
+}
+
+/// Shown instead of made-up values when the organization details can't be
+/// loaded.
+class _OrganizationLoadError extends StatelessWidget {
+  const _OrganizationLoadError({
+    required this.isLoading,
+    required this.onRetry,
+  });
+
+  final bool isLoading;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "We couldn't load your organization details.",
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        const Text('Check your connection and try again.'),
+        const SizedBox(height: 16),
+        TextButton(onPressed: onRetry, child: const Text('Try again')),
+      ],
     );
   }
 }

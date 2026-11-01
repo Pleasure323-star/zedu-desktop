@@ -36,7 +36,7 @@ class CreditPackagesGrid extends StatelessWidget {
         benefits: [
           'Create your own AI Co Workers',
           'Unlimited AI Co Workers',
-          'AI Credits purchaeable',
+          'AI Credits purchasable',
           '1 hour maximum call duration',
           'Up to 5 buzz participants',
           'Up to 5 active calls per workspace',
@@ -52,7 +52,7 @@ class CreditPackagesGrid extends StatelessWidget {
         benefits: [
           'Create your own AI Co Workers',
           'Unlimited AI Co Workers',
-          'AI Credits purchaeable',
+          'AI Credits purchasable',
           '1 hour maximum call duration',
           'Up to 50 buzz participants',
           'Up to 50 active calls per workspace',
@@ -69,7 +69,7 @@ class CreditPackagesGrid extends StatelessWidget {
         benefits: [
           'Create your own AI Co Workers',
           'Unlimited AI Co Workers',
-          'AI Credits purchaeable',
+          'AI Credits purchasable',
           'Unlimited call duration',
           'Up to 1500 buzz participants',
           'Up to 1500 active calls per workspace',
@@ -87,9 +87,9 @@ class CreditPackagesGrid extends StatelessWidget {
         benefits: [
           'Create your own AI Co Workers',
           'Unlimited AI Co Workers',
-          'AI Credits purchaeable',
+          'AI Credits purchasable',
           '1 hour maximum call duration',
-          'Up to 500 buzz partiipants',
+          'Up to 500 buzz participants',
           'Up to 500 active calls per workspace',
           'Advanced controls for administrator only',
           'Call records available',
@@ -105,7 +105,7 @@ class CreditPackagesGrid extends StatelessWidget {
         benefits: [
           'Create your own AI Co Workers',
           'Unlimited AI Co Workers',
-          'AI Credits purchaeable',
+          'AI Credits purchasable',
           'Unlimited call duration',
           'Unlimited buzz participants',
           'Up to 1000 active calls per workspace',

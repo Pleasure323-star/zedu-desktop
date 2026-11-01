@@ -55,6 +55,7 @@ class _ForgotPasswordViewState extends ConsumerState<ForgotPasswordView> {
         toolbarHeight: 80,
         backgroundColor: context.colors.background,
         elevation: 0,
+        automaticallyImplyLeading: false,
         title: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 40),
           child: Row(
@@ -95,19 +96,36 @@ class _ForgotPasswordViewState extends ConsumerState<ForgotPasswordView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                context.gapV(136),
+                context.gapV(72),
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: context.colors.primaryBg,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.lock_outline_rounded,
+                    color: context.colors.primary,
+                    size: 26,
+                  ),
+                ),
+                context.gapV(20),
                 Text(
-                  'Forgot Password',
+                  'Forgot your password?',
                   style: context.textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 context.gapV(12),
-                Text(
-                  'Enter the email you used in creating your account, we will send you\ninstructions on how to reset your password.',
-                  textAlign: TextAlign.center,
-                  style: context.textTheme.bodyMedium?.copyWith(
-                    color: context.colors.textSecondary,
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 400),
+                  child: Text(
+                    'Enter the email address for your account and we\'ll send you instructions to reset your password.',
+                    textAlign: TextAlign.center,
+                    style: context.textTheme.bodyMedium?.copyWith(
+                      color: context.colors.textSecondary,
+                    ),
                   ),
                 ),
                 context.gapV(48),
@@ -119,7 +137,7 @@ class _ForgotPasswordViewState extends ConsumerState<ForgotPasswordView> {
                       AppTextField(
                         controller: _emailController,
                         label: 'Email address',
-                        hint: 'johndoe@email.com',
+                        hint: 'Enter your email address',
                         keyboardType: TextInputType.emailAddress,
                         textInputAction: TextInputAction.done,
                         validator: (value) =>
@@ -127,14 +145,19 @@ class _ForgotPasswordViewState extends ConsumerState<ForgotPasswordView> {
                       ),
                       context.gapV(24),
                       AppButton(
-                        label: 'Submit',
+                        label: 'Send reset instructions',
                         loading: authState.isLoading,
                         onPressed: _onSubmitPressed,
                       ),
-                      context.gapV(16),
-                      AppButton.outlined(
-                        label: 'Back to Login',
-                        onPressed: () => context.go(AppRouter.login),
+                      context.gapV(8),
+                      Center(
+                        child: AppButton.ghost(
+                          label: 'Back to login',
+                          leading: const Icon(Icons.arrow_back, size: 16),
+                          expand: false,
+                          height: 40,
+                          onPressed: () => context.go(AppRouter.login),
+                        ),
                       ),
                     ],
                   ),

@@ -25,7 +25,8 @@ class Channel {
 
   factory Channel.fromJson(Map<String, dynamic> json) {
     return Channel(
-      id: json['id'] as String? ?? '',
+      // The server sends a channel's id as `channels_id` in the channel list.
+      id: (json['channels_id'] ?? json['id']) as String? ?? '',
       name: json['name'] as String? ?? '',
       description: json['description'] as String? ?? '',
       organisationId: json['organisation_id'] as String? ?? '',

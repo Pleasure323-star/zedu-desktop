@@ -16,7 +16,7 @@ class AttachmentPreviewBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 88,
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 4),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: files.length,

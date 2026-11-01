@@ -39,6 +39,10 @@ class DmConversation {
       ? avatarUrl
       : defaultAvatarUrl;
 
+  /// False when the conversation has no messages and was never read, so
+  /// [lastActivityAt] is only the epoch-0 placeholder used for sorting.
+  bool get hasActivity => previewThreads.isNotEmpty || lastReadAt != null;
+
   DateTime get lastActivityAt {
     if (previewThreads.isNotEmpty) {
       return previewThreads.first.createdAt;

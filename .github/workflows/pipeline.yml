@@ -3,7 +3,8 @@ name: Vulnerability check pipeline
 on:
   pull_request:
   push:
-    branches: [main, develop, dev]
+    # Tier 1: every push in a contributor fork runs the checks.
+    branches: ["**"]
 
 permissions:
   contents: read
@@ -40,6 +41,9 @@ jobs:
 
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed .
+
+      - name: Tests
+        run: flutter test
 
   security-scan:
     runs-on: ubuntu-latest

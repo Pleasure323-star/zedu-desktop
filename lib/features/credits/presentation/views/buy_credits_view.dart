@@ -50,9 +50,7 @@ class _BuyCreditsViewState extends ConsumerState<BuyCreditsView> {
 
     final state = ref.watch(creditsNotifierProvider);
     final authUser = ref.watch(authNotifierProvider).user;
-    final balance = state.usage.balance > 0
-        ? state.usage.balance
-        : (authUser?.creditBalance ?? 0);
+    final balance = ref.watch(orgCreditBalanceProvider);
 
     return ProfileSettingsShell(
       selectedSection: UserProfileSection.billing,

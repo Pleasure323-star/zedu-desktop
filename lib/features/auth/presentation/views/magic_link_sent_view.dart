@@ -29,7 +29,7 @@ class MagicLinkSentView extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
-                    'Awesome! mail sent.',
+                    'Check your email',
                     style: context.textTheme.headlineMedium,
                   ),
                   context.gapV(40),
@@ -49,7 +49,7 @@ class MagicLinkSentView extends StatelessWidget {
                   context.gapV(48),
                   Text.rich(
                     TextSpan(
-                      text: 'We\'ve just sent an email to ',
+                      text: 'We\'ve sent a sign-in link to ',
                       style: context.textTheme.headlineSmall?.copyWith(
                         color: context.colors.textHint,
                         fontWeight: FontWeight.w400,
@@ -65,7 +65,7 @@ class MagicLinkSentView extends StatelessWidget {
                         ),
                         TextSpan(
                           text:
-                              ' with detailed instructions on how to access your account.',
+                              '. Open the email and click the link to continue.',
                           style: context.textTheme.headlineSmall?.copyWith(
                             color: context.colors.textHint,
                             fontWeight: FontWeight.w400,

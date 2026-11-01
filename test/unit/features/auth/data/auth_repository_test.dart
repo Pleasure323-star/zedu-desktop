@@ -78,9 +78,9 @@ void main() {
 
     group('getCurrentUser', () {
       test('returns Success<User> when datasource succeeds', () async {
-        final mockUser = LoginResponseModel.fromJson(
-          LoginResponseModel.mockLoginResponse,
-        ).user;
+        final mockUser = ProfileModel.fromJson(
+          LoginResponseModel.mockLoginResponse['user'] as Map<String, dynamic>,
+        );
 
         when(() => mockDatasource.me()).thenAnswer((_) async => mockUser);
 

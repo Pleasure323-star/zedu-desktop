@@ -1,0 +1,42 @@
+name: Device session
+
+# Caller for zedu-ci's device-session.yml. A reviewer's `/test desktop` comment on a PR starts a session
+# on the PR's own Linux build, streamed to a browser (zedu-ci devices/README.md); `/test extend` adds 15
+# minutes and `/test stop` ends it. The logic is in zedu-ci, pinned by commit. Trusted: runs in this
+# repo with its own token and never checks out PR code.
+# Needs the repo secret DEVICE_TOKEN (the slot's bearer token).
+# required_statuses are the commit statuses that must be green before a session starts: the fork build and
+# every scan this repo runs on a PR.
+
+on:
+  issue_comment:
+    types:
+      - created
+
+permissions:
+  contents: read
+
+concurrency:
+  group: device-session-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  session:
+    name: Device session
+    if: >-
+      github.repository == 'zedu-hng/zedu-desktop' && github.event.issue.pull_request &&
+      startsWith(github.event.comment.body, '/test')
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+      statuses: read
+    uses: zedu-hng/zedu-ci/.github/workflows/device-session.yml@4e68db81f7dc1ecfbb656308c1a9e9b718eaae0c
+    with:
+      platform: desktop
+      slot_url: https://desktop.preview.groups.zedu.chat
+      artifact: desktop-linux
+      tarball: zedu-linux.tar.gz
+      required_statuses: Fork build,Forbidden patterns,Lazarus scanner,ClamAV,Obfuscation scan
+    secrets:
+      DEVICE_TOKEN: ${{ secrets.DEVICE_TOKEN }}

@@ -13,6 +13,10 @@ class EditChannelModal extends ConsumerStatefulWidget {
 class _EditChannelModalState extends ConsumerState<EditChannelModal> {
   late TextEditingController _descController;
   late TextEditingController _topicController;
+  // Kept in the dialog, not in the channel list state, so an old error never
+  // shows when the dialog is opened again.
+  bool _isSaving = false;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -28,22 +32,38 @@ class _EditChannelModalState extends ConsumerState<EditChannelModal> {
     super.dispose();
   }
 
-  void _saveChanges() {
-    ref
+  Future<void> _saveChanges() async {
+    // A second tap before the screen rebuilds must not start a second save.
+    if (_isSaving) return;
+    setState(() {
+      _isSaving = true;
+      _errorMessage = null;
+    });
+
+    final success = await ref
         .read(channelProvider.notifier)
         .updateChannelTopicOrDescription(
           channelId: widget.channel.id,
           topic: _topicController.text.trim(),
           description: _descController.text.trim(),
         );
-    Navigator.of(context).pop();
+    if (!mounted) return;
+    if (success) {
+      Navigator.of(context).pop();
+    } else {
+      setState(() {
+        _isSaving = false;
+        _errorMessage = 'Could not save the changes. Please try again.';
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     final textTheme = context.textTheme;
-    final isLoading = ref.watch(channelProvider).isLoading;
+    final isLoading = _isSaving;
+    final errorMessage = _errorMessage;
 
     return Dialog(
       backgroundColor: colors.background,
@@ -109,6 +129,13 @@ class _EditChannelModalState extends ConsumerState<EditChannelModal> {
               ),
               style: textTheme.bodyMedium?.copyWith(color: colors.textPrimary),
             ),
+            if (errorMessage != null) ...[
+              const SizedBox(height: 16),
+              Text(
+                errorMessage,
+                style: textTheme.bodySmall?.copyWith(color: colors.error),
+              ),
+            ],
             const SizedBox(height: 32),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -145,7 +172,7 @@ class _EditChannelModalState extends ConsumerState<EditChannelModal> {
                           ),
                         )
                       : Text(
-                          'Save Changes',
+                          'Save changes',
                           style: textTheme.bodyMedium?.copyWith(
                             color: Colors.white,
                           ),

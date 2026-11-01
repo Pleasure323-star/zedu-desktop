@@ -1,0 +1,40 @@
+name: Upstream batch
+
+# Caller: the logic lives in zedu-hng/zedu-ci (upstream-batch.yml), pinned by commit. On every push to
+# dev (and by hand), builds the batch of ticket commits zeduchat doesn't have yet and opens the PR there
+# with the merged PR's own title and body. Review-org changes stay out: PRs labelled review-org-only and
+# the paths in .github/upstream-exclude. Without the UPSTREAM_TOKEN org secret it only writes a prefilled
+# link to the run summary.
+# Config (set only in the review org, so contributor forks skip this):
+#   vars.UPSTREAM_REPO     e.g. zeduchat/zedu-desktop
+#   vars.UPSTREAM_BRANCH   branch that batches go to upstream (default: central-staging)
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+    inputs:
+      source:
+        description: Review-org branch to send
+        default: dev
+
+permissions: {}
+
+concurrency:
+  group: upstream-batch
+  cancel-in-progress: false
+
+jobs:
+  batch:
+    name: Build upstream batch
+    if: vars.UPSTREAM_REPO != ''
+    permissions:
+      contents: write
+      pull-requests: read
+    uses: zedu-hng/zedu-ci/.github/workflows/upstream-batch.yml@4e68db81f7dc1ecfbb656308c1a9e9b718eaae0c
+    with:
+      upstream_repo: ${{ vars.UPSTREAM_REPO }}
+      upstream_branch: ${{ vars.UPSTREAM_BRANCH || 'central-staging' }}
+      source: ${{ inputs.source || 'dev' }}
+    secrets:
+      UPSTREAM_TOKEN: ${{ secrets.UPSTREAM_TOKEN }}

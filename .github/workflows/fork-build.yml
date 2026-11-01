@@ -1,0 +1,68 @@
+name: Fork build
+
+# Caller: the logic lives in zedu-hng/zedu-ci (fork-build.yml), pinned by commit. This file sets the
+# triggers, concurrency and token permissions. Keep the file name: other workflows look it up.
+# Relays the fork's PR build as "Fork build" and posts "Backend dependency". Re-check any time with a
+# /fork-build comment. Needs the fork-build-wait environment (3-minute wait timer, dev only).
+
+# The PR number in the run name lets the sweep skip PRs that already have a relay running or waiting.
+run-name: "Fork build #${{ github.event.pull_request.number || github.event.issue.number || inputs.pr }}"
+
+on:
+  pull_request_target:
+    branches:
+      - dev
+      - central-staging
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      - edited
+  issue_comment:
+    types:
+      - created
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: PR number to re-check
+        required: true
+      attempt:
+        description: Re-check number (set by the relay itself; 0 checks immediately)
+        required: false
+        default: "0"
+  schedule:
+    - cron: "*/15 * * * *"
+
+permissions: {}
+
+# Only real relays share a per-PR group: PR events other than edits, /fork-build and the relay's own
+# re-checks. Edits and anything else get a unique group, so a template tick or an unrelated comment
+# can't cancel a relay that's waiting on the fork build. An edit that changes the Backend URL
+# dispatches the relay itself.
+concurrency:
+  group: >-
+    fork-build-${{
+      (github.event_name == 'pull_request_target' && github.event.action != 'edited' &&
+       github.event.pull_request.number)
+      || ((github.event.comment.body == '/fork-build' || startsWith(github.event.comment.body, '/fork-build '))
+          && github.event.issue.number)
+      || inputs.pr
+      || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  fork-build:
+    name: Fork build
+    if: vars.IS_BOOTCAMP == 'true'
+    permissions:
+      actions: write
+      contents: read
+      pull-requests: write
+      statuses: write
+    uses: zedu-hng/zedu-ci/.github/workflows/fork-build.yml@4e68db81f7dc1ecfbb656308c1a9e9b718eaae0c
+    with:
+      artifact_help: |
+        - **macOS** (`desktop-macos`): unzip twice, then right-click the app > Open (or `xattr -dr com.apple.quarantine Zedu.app`) to get past Gatekeeper.
+        - **Windows** (`desktop-windows`): unzip and run the `.exe`; SmartScreen > More info > Run anyway.
+        - **Linux** (`desktop-linux`): extract the tarball and run the binary in the bundle root.

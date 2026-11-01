@@ -1,4 +1,5 @@
 import 'package:zedu/core/core.dart';
+import 'package:zedu/features/features.dart';
 
 enum ActiveChatType {
   channel,
@@ -40,6 +41,9 @@ class ActiveChatState {
 class ActiveChatNotifier extends Notifier<ActiveChatState> {
   @override
   ActiveChatState build() {
+    // A channel picked in one workspace means nothing in another, so the
+    // selection starts over when the workspace changes.
+    ref.watch(workspaceProvider.select((s) => s.selectedWorkspace?.id));
     return ActiveChatState.generalChannel;
   }
 

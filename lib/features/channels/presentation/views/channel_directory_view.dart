@@ -25,7 +25,8 @@ class _ChannelDirectoryViewState extends ConsumerState<ChannelDirectoryView> {
     final colors = context.colors;
     final textTheme = context.textTheme;
 
-    final filteredChannels = channelState.channels.where((c) {
+    final channels = channelState.value ?? const <Channel>[];
+    final filteredChannels = channels.where((c) {
       if (_searchQuery.isEmpty) return true;
       return c.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           c.description.toLowerCase().contains(_searchQuery.toLowerCase());
@@ -52,6 +53,16 @@ class _ChannelDirectoryViewState extends ConsumerState<ChannelDirectoryView> {
             decoration: InputDecoration(
               hintText: 'Search channels',
               prefixIcon: Icon(Icons.search, color: colors.textHint),
+              suffixIcon: _searchQuery.isEmpty
+                  ? null
+                  : IconButton(
+                      tooltip: 'Clear search',
+                      icon: const Icon(Icons.close, size: 18),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _searchQuery = '');
+                      },
+                    ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(color: colors.divider),

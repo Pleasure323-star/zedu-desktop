@@ -51,8 +51,8 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
   }
 
   @override
-  Future<Result<OrganizationProfile>> getOrganization() {
-    return _guard(_remote.getOrganization);
+  Future<Result<OrganizationProfile>> getOrganization({String? orgId}) {
+    return _guard(() => _remote.getOrganization(orgId: orgId));
   }
 
   @override
@@ -69,14 +69,15 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
 
   @override
   Future<Result<OrganizationProfile>> updateOrganization(
-    OrganizationProfile organization,
-  ) {
-    return _guard(() => _remote.updateOrganization(organization));
+    OrganizationProfile organization, {
+    String? orgId,
+  }) {
+    return _guard(() => _remote.updateOrganization(organization, orgId: orgId));
   }
 
   @override
-  Future<Result<void>> deleteOrganization() {
-    return _guard(_remote.deleteOrganization);
+  Future<Result<void>> deleteOrganization({String? orgId}) {
+    return _guard(() => _remote.deleteOrganization(orgId: orgId));
   }
 
   @override

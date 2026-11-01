@@ -9,7 +9,13 @@ class PersonalProfilePanel extends ConsumerWidget {
     final colors = context.colors;
     final profileState = ref.watch(userProfileNotifierProvider);
     final account = profileState.account ?? ProfileAccount.empty();
-    final menuState = ref.watch(userMenuStateProvider);
+    // Same sources as the avatar menu, so the status here and there always agree.
+    final status =
+        ref.watch(authNotifierProvider).user?.status ?? UserStatus.empty;
+    final isOnline = status.online;
+    final notificationsPaused = ref
+        .watch(notificationSettingsProvider)
+        .isDndActive;
 
     final displayName = account.displayName.isNotEmpty
         ? account.displayName
@@ -131,27 +137,24 @@ class PersonalProfilePanel extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
-                        menuState.notificationsPaused
+                        notificationsPaused
                             ? Icons.notifications_off_outlined
                             : Icons.notifications_none,
                         size: 14,
                         color: colors.textHint,
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        menuState.isAway ? 'Away' : 'Active',
-                        style: context.textTheme.bodySmall?.copyWith(
-                          color: colors.textHint,
-                        ),
-                      ),
-                      if (menuState.notificationsPaused) ...[
-                        Text(
-                          ', Notifications snoozed',
+                      Flexible(
+                        child: Text(
+                          notificationsPaused
+                              ? '${isOnline ? 'Active' : 'Away'}, Notifications paused'
+                              : (isOnline ? 'Active' : 'Away'),
+                          textAlign: TextAlign.center,
                           style: context.textTheme.bodySmall?.copyWith(
                             color: colors.textHint,
                           ),
                         ),
-                      ],
+                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
@@ -160,38 +163,53 @@ class PersonalProfilePanel extends ConsumerWidget {
                   Icon(Icons.access_time, size: 14, color: colors.textHint),
                   const SizedBox(height: 16),
 
-                  // Action buttons row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  // Your own profile: no Favourite (that's for other people).
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
                       _ActionChip(
-                        icon: Icons.star_outline,
-                        label: '',
+                        icon: notificationsPaused
+                            ? Icons.notifications_active_outlined
+                            : Icons.notifications_off_outlined,
+                        label: notificationsPaused ? 'Unmute' : 'Mute',
+                        tooltip: notificationsPaused
+                            ? 'Resume notifications'
+                            : 'Pause notifications for 1 hour',
                         colors: colors,
+                        onTap: () => _toggleNotifications(
+                          context,
+                          ref,
+                          notificationsPaused,
+                        ),
                       ),
-                      const SizedBox(width: 8),
                       _ActionChip(
-                        icon: Icons.notifications_off_outlined,
-                        label: 'Mute',
+                        icon: isOnline
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        label: isOnline ? 'Hide' : 'Show',
+                        tooltip: isOnline
+                            ? 'Set yourself as away'
+                            : 'Set yourself as active',
                         colors: colors,
+                        onTap: () => _toggleAway(context, ref, isOnline),
                       ),
-                      const SizedBox(width: 8),
-                      _ActionChip(
-                        icon: Icons.visibility_off_outlined,
-                        label: 'Hide',
-                        colors: colors,
-                      ),
-                      const SizedBox(width: 8),
                       _ActionChip(
                         icon: Icons.description_outlined,
                         label: 'View Files',
+                        tooltip: 'Open your files',
                         colors: colors,
+                        onTap: () => _viewFiles(ref),
                       ),
-                      const SizedBox(width: 8),
                       _ActionChip(
                         icon: Icons.copy_outlined,
                         label: '',
+                        tooltip: account.username.trim().isNotEmpty
+                            ? 'Copy your username'
+                            : 'Copy your email',
                         colors: colors,
+                        onTap: () => _copyHandle(context, account),
                       ),
                     ],
                   ),
@@ -238,6 +256,64 @@ class PersonalProfilePanel extends ConsumerWidget {
     );
   }
 
+  /// Like "Pause notifications" in the avatar menu, or resumes them.
+  void _toggleNotifications(BuildContext context, WidgetRef ref, bool paused) {
+    final settings = ref.read(notificationSettingsProvider.notifier);
+    if (paused) {
+      settings.clearDndMode();
+    } else {
+      settings.setDndMode(const Duration(hours: 1));
+    }
+    AppToastService.show(
+      context,
+      type: AppToastType.success,
+      message: paused
+          ? 'Notifications resumed'
+          : 'Notifications paused for 1 hour',
+    );
+  }
+
+  /// Like "Set yourself as away" in the avatar menu; says if it fails.
+  Future<void> _toggleAway(
+    BuildContext context,
+    WidgetRef ref,
+    bool wasOnline,
+  ) async {
+    await ref.read(authNotifierProvider.notifier).toggleOnlineStatus();
+    if (!context.mounted) return;
+    final online =
+        (ref.read(authNotifierProvider).user?.status ?? UserStatus.empty)
+            .online;
+    final changed = online != wasOnline;
+    AppToastService.show(
+      context,
+      type: changed ? AppToastType.success : AppToastType.error,
+      message: changed
+          ? (online ? 'You are now active' : 'You are now away')
+          : "Couldn't change your status. Please try again.",
+    );
+  }
+
+  /// Opens the Files tab (like the sidebar's Files button) and closes the panel.
+  void _viewFiles(WidgetRef ref) {
+    ref.read(homeSidebarProvider.notifier).setType(HomeSidebarType.files);
+    ref.read(personalProfilePanelProvider.notifier).state = false;
+  }
+
+  /// Copies the user's @username, or their email when there's no username.
+  Future<void> _copyHandle(BuildContext context, ProfileAccount account) async {
+    final username = account.username.trim();
+    final text = username.isNotEmpty ? '@$username' : account.email.trim();
+    if (text.isEmpty) return;
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!context.mounted) return;
+    AppToastService.show(
+      context,
+      type: AppToastType.success,
+      message: 'Copied $text',
+    );
+  }
+
   void _openEditDialog(
     BuildContext context,
     WidgetRef ref,
@@ -253,40 +329,47 @@ class _ActionChip extends StatelessWidget {
   const _ActionChip({
     required this.icon,
     required this.label,
+    required this.tooltip,
     required this.colors,
+    required this.onTap,
   });
 
   final IconData icon;
   final String label;
+  final String tooltip;
   final AppPalette colors;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {},
-      borderRadius: BorderRadius.circular(6),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-        decoration: BoxDecoration(
-          border: Border.all(color: colors.divider),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 14, color: colors.textSecondary),
-            if (label.isNotEmpty) ...[
-              const SizedBox(width: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: colors.textSecondary,
-                  fontWeight: FontWeight.w500,
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          decoration: BoxDecoration(
+            border: Border.all(color: colors.divider),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 14, color: colors.textSecondary),
+              if (label.isNotEmpty) ...[
+                const SizedBox(width: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: colors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

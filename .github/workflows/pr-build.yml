@@ -1,0 +1,26 @@
+name: PR build
+
+# Runs in contributor forks (on the fork's Actions minutes) and calls zedu-hng/zedu-ci (pr-build-flutter.yml),
+# pinned by commit. Builds only when the branch has an open PR into zedu-hng/zedu-desktop, against our dev
+# backend, or the host on the PR description's `Backend URL:` line. The review repo's Fork build check
+# reads the result. First build after opening a PR: Actions -> PR build -> Run workflow on the branch
+# (or push a commit). No fork setup needed.
+
+# No paths-ignore: a docs-only push on top of code changes still needs a build for its head commit,
+# or the review repo's Fork build check has nothing to read for it.
+on:
+  push:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: pr-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: PR build
+    permissions:
+      contents: read
+    uses: zedu-hng/zedu-ci/.github/workflows/pr-build-flutter.yml@4e68db81f7dc1ecfbb656308c1a9e9b718eaae0c

@@ -13,6 +13,10 @@ class _CreateChannelModalState extends ConsumerState<CreateChannelModal> {
   final _descController = TextEditingController();
   final _topicController = TextEditingController();
   bool _isPrivate = false;
+  // Kept in the dialog, not in the channel list state, so an old error never
+  // shows when the dialog is opened again.
+  bool _isCreating = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -22,10 +26,16 @@ class _CreateChannelModalState extends ConsumerState<CreateChannelModal> {
     super.dispose();
   }
 
-  void _createChannel() {
+  Future<void> _createChannel() async {
     if (_nameController.text.trim().isEmpty) return;
+    // A second tap before the screen rebuilds must not start a second create.
+    if (_isCreating) return;
+    setState(() {
+      _isCreating = true;
+      _errorMessage = null;
+    });
 
-    ref
+    final result = await ref
         .read(channelProvider.notifier)
         .createChannel(
           name: _nameController.text.trim(),
@@ -33,24 +43,34 @@ class _CreateChannelModalState extends ConsumerState<CreateChannelModal> {
           topic: _topicController.text.trim(),
           isPrivate: _isPrivate,
         );
-    Navigator.of(context).pop();
+    if (!mounted) return;
+    switch (result) {
+      case Success<Channel>():
+        Navigator.of(context).pop();
+      case Failure<Channel>(:final error):
+        setState(() {
+          _isCreating = false;
+          _errorMessage = error.message;
+        });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     final textTheme = context.textTheme;
-    final isLoading = ref.watch(channelProvider).isLoading;
+    final isLoading = _isCreating;
+    final errorMessage = _errorMessage;
 
     return Dialog(
       backgroundColor: colors.background,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Container(
+      child: SizedBox(
         width: 400,
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: ListView(
+          shrinkWrap: true,
+          physics: const ClampingScrollPhysics(),
+          padding: const EdgeInsets.all(24),
           children: [
             Text(
               'Create a channel',
@@ -163,6 +183,13 @@ class _CreateChannelModalState extends ConsumerState<CreateChannelModal> {
                 ),
               ],
             ),
+            if (errorMessage != null) ...[
+              const SizedBox(height: 16),
+              Text(
+                errorMessage,
+                style: textTheme.bodySmall?.copyWith(color: colors.error),
+              ),
+            ],
             const SizedBox(height: 32),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,

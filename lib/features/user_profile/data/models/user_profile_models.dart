@@ -6,7 +6,28 @@ class ProfileAccountModel extends ProfileAccount {
     required super.email,
     required super.timezone,
     super.avatarUrl,
+    super.displayName,
+    super.username,
+    super.phoneNumber,
+    super.title,
+    super.namePronunciation,
+    super.country,
   });
+
+  factory ProfileAccountModel.fromAccount(ProfileAccount account) {
+    return ProfileAccountModel(
+      name: account.name,
+      email: account.email,
+      timezone: account.timezone,
+      avatarUrl: account.avatarUrl,
+      displayName: account.displayName,
+      username: account.username,
+      phoneNumber: account.phoneNumber,
+      title: account.title,
+      namePronunciation: account.namePronunciation,
+      country: account.country,
+    );
+  }
 
   factory ProfileAccountModel.fromJson(Map<String, dynamic> json) {
     return ProfileAccountModel(
@@ -71,11 +92,13 @@ class OrganizationProfileModel extends OrganizationProfile {
 
   factory OrganizationProfileModel.fromJson(Map<String, dynamic> json) {
     return OrganizationProfileModel(
-      id: json['id'] as String? ?? '019700db-4e22-7f90-a20e-f9116291ef24',
-      name: json['name'] as String? ?? 'Anonymous user',
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
       natureOfBusiness:
-          json['nature_of_business'] as String? ?? 'Design agency',
-      country: json['country'] as String? ?? 'Nigeria',
+          json['nature_of_business'] as String? ??
+          json['type'] as String? ??
+          '',
+      country: json['country'] as String? ?? '',
     );
   }
 

@@ -66,7 +66,26 @@ class DmSidebarList extends ConsumerWidget {
                     ),
                   ),
                   data: (conversations) {
-                    if (conversations.isEmpty) {
+                    final actions = ref.watch(dmConversationActionsProvider);
+                    final visibleConversations =
+                        conversations
+                            .where(
+                              (conversation) => !actions.deletedIds.contains(
+                                conversation.channelId,
+                              ),
+                            )
+                            .toList()
+                          ..sort((a, b) {
+                            final aPinned = actions.pinnedIds.contains(
+                              a.channelId,
+                            );
+                            final bPinned = actions.pinnedIds.contains(
+                              b.channelId,
+                            );
+                            if (aPinned != bPinned) return aPinned ? -1 : 1;
+                            return b.lastActivityAt.compareTo(a.lastActivityAt);
+                          });
+                    if (visibleConversations.isEmpty) {
                       return Center(
                         child: Text(
                           'No recent chats',
@@ -88,12 +107,19 @@ class DmSidebarList extends ConsumerWidget {
                         }
                         return false;
                       },
-                      child: ListView.builder(
-                        padding: EdgeInsets.zero,
-                        itemCount: conversations.length,
-                        itemBuilder: (context, index) {
-                          return DmListTile(conversation: conversations[index]);
-                        },
+                      // Transparent Material so each row's hover and
+                      // selected ink paints above the sidebar colour.
+                      child: Material(
+                        type: MaterialType.transparency,
+                        child: ListView.builder(
+                          padding: EdgeInsets.zero,
+                          itemCount: visibleConversations.length,
+                          itemBuilder: (context, index) {
+                            return DmListTile(
+                              conversation: visibleConversations[index],
+                            );
+                          },
+                        ),
                       ),
                     );
                   },

@@ -115,16 +115,29 @@ void main() {
         );
       });
 
-      test('calls GET /auth/me and returns user', () async {
-        final rawUserData =
-            LoginResponseModel.mockLoginResponse['user']
-                as Map<String, dynamic>;
+      test('calls GET /profile and maps the profile to a user', () async {
+        const rawProfile = <String, dynamic>{
+          'id': '019142c8-5408-7a48-8173-f31e6c8e00cd',
+          'user_id': '019142c8-5408-7a47-b94c-91d674dd8358',
+          'email': 'profile@example.com',
+          'phone': '09099999999',
+          'first_name': 'Test',
+          'last_name': 'Og',
+          'full_name': 'Test Og',
+          'username': 'tester',
+          'avatar_url': 'avatar.png',
+          'default_avatar_url': 'default.png',
+          'created_at': '2024-08-11T19:51:50+01:00',
+          'updated_at': '2024-08-12T00:59:39+01:00',
+          'deactivated': false,
+          'organisation_id': 'org-1',
+        };
 
         when(
-          () => mockApi.get<Map<String, dynamic>>(path: '/auth/me'),
+          () => mockApi.get<Map<String, dynamic>>(path: '/profile'),
         ).thenAnswer(
           (_) async => ApiResponseModel<Map<String, dynamic>>(
-            data: {'data': rawUserData},
+            data: {'data': rawProfile},
             statusCode: 200,
           ),
         );
@@ -137,12 +150,38 @@ void main() {
           apiBaseService: mockApi,
         );
 
-        final user = await datasource.me();
+        final user = (await datasource.me()).toEntity();
 
-        expect(user.email, rawUserData['email'] as String);
+        expect(user.id, rawProfile['user_id']);
+        expect(user.email, rawProfile['email']);
+        expect(user.currentOrg, 'org-1');
+        expect(user.fullname, 'Test Og');
+        expect(user.createdAt, DateTime.parse('2024-08-11T19:51:50+01:00'));
         verify(
-          () => mockApi.get<Map<String, dynamic>>(path: '/auth/me'),
+          () => mockApi.get<Map<String, dynamic>>(path: '/profile'),
         ).called(1);
+        verifyNever(() => mockApi.get<Map<String, dynamic>>(path: '/auth/me'));
+      });
+
+      test('rethrows ApiFailure from GET /profile', () async {
+        when(
+          () => mockApi.get<Map<String, dynamic>>(path: '/profile'),
+        ).thenThrow(
+          const ApiFailure(
+            message: 'Unauthorized',
+            kind: ApiFailureKind.unauthorized,
+          ),
+        );
+
+        final datasource = AuthRemoteDataSourceImpl(
+          config: const AppConfig(
+            apiBaseUrl: 'https://api.example.com',
+            usesMockData: false,
+          ),
+          apiBaseService: mockApi,
+        );
+
+        await expectLater(datasource.me(), throwsA(isA<ApiFailure>()));
       });
     });
 

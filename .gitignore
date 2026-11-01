@@ -12,6 +12,8 @@
 .swiftpm/
 migrate_working_dir/
 *.txt
+# Desktop platform build files; without this Linux/Windows projects are incomplete.
+!CMakeLists.txt
 
 # IntelliJ related
 *.iml

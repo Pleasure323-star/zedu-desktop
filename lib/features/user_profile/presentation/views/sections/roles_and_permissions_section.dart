@@ -12,7 +12,7 @@ class RolesAndPermissionsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const ProfileSectionHeader(
-          title: 'Roles & Permissions',
+          title: 'Roles & permissions',
           subtitle: 'Define and manage roles and their associated permissions.',
         ),
         const SizedBox(height: 28),

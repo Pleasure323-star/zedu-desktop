@@ -17,16 +17,17 @@ abstract interface class UserProfileRepository {
     required String newPassword,
   });
 
-  Future<Result<OrganizationProfile>> getOrganization();
+  Future<Result<OrganizationProfile>> getOrganization({String? orgId});
   Future<Result<OrganizationProfile>> createOrganization({
     required String name,
     required String type,
     required String country,
   });
   Future<Result<OrganizationProfile>> updateOrganization(
-    OrganizationProfile organization,
-  );
-  Future<Result<void>> deleteOrganization();
+    OrganizationProfile organization, {
+    String? orgId,
+  });
+  Future<Result<void>> deleteOrganization({String? orgId});
 
   Future<Result<List<TeamMember>>> getTeamMembers({String? orgId});
   Future<Result<TeamMember>> inviteMember({

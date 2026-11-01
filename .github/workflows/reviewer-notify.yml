@@ -1,0 +1,47 @@
+name: Reviewer notify
+
+# Caller: the logic lives in zedu-hng/zedu-ci (reviewer-notify.yml), pinned by commit. This file sets the
+# triggers, concurrency and token permissions. Keep the file name: other workflows look it up.
+# Keeps the ready-for-review queue: lead-approved PRs with a green Fork build, 3 unclaimed per team.
+
+on:
+  pull_request_target:
+    branches:
+      - dev
+      - central-staging
+    types:
+      - ready_for_review
+      - labeled
+      - unlabeled
+      - synchronize
+      - reopened
+      - converted_to_draft
+      - closed
+  workflow_run:
+    workflows: ["Lead approval", "Fork build"]
+    types:
+      - completed
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+# Every run re-evaluates the whole queue, so runs share one group without cancelling. Dispatch-started
+# Fork build completions are skipped (the relay dispatches this itself), in a group of their own.
+concurrency:
+  group: >-
+    ${{ github.event_name == 'workflow_run' && github.event.workflow_run.name == 'Fork build' &&
+        github.event.workflow_run.event == 'workflow_dispatch' &&
+        format('reviewer-notify-ignored-{0}', github.run_id) || 'reviewer-notify' }}
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    name: Reviewer notify
+    if: vars.IS_BOOTCAMP == 'true'
+    permissions:
+      contents: read
+      pull-requests: write
+      statuses: read
+    uses: zedu-hng/zedu-ci/.github/workflows/reviewer-notify.yml@4e68db81f7dc1ecfbb656308c1a9e9b718eaae0c

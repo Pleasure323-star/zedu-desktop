@@ -16,16 +16,17 @@ abstract interface class UserProfileRemoteDataSource {
     required String currentPassword,
     required String newPassword,
   });
-  Future<OrganizationProfileModel> getOrganization();
+  Future<OrganizationProfileModel> getOrganization({String? orgId});
   Future<OrganizationProfileModel> createOrganization({
     required String name,
     required String type,
     required String country,
   });
   Future<OrganizationProfileModel> updateOrganization(
-    OrganizationProfile organization,
-  );
-  Future<void> deleteOrganization();
+    OrganizationProfile organization, {
+    String? orgId,
+  });
+  Future<void> deleteOrganization({String? orgId});
   Future<List<TeamMemberModel>> getTeamMembers({String? orgId});
   Future<TeamMemberModel> inviteMember({
     required String email,
@@ -64,26 +65,25 @@ class UserProfileRemoteDataSourceImpl implements UserProfileRemoteDataSource {
   @override
   Future<ProfileAccountModel> updateAccount(ProfileAccount account) async {
     if (_config.usesMockData) {
-      AppLogger.d('Using mock data for PATCH /profile/account', tag: _tag);
-      return ProfileAccountModel(
-        name: account.name,
-        email: account.email,
-        timezone: account.timezone,
-        avatarUrl: account.avatarUrl,
-      );
+      AppLogger.d('Using mock data for PATCH /profile', tag: _tag);
+      return ProfileAccountModel.fromAccount(account);
     }
-    final response = await _apiBaseService.patch<Map<String, dynamic>>(
-      path: '/profile/account',
-      data: {
-        'name': account.name,
-        'email': account.email,
-        'timezone': account.timezone,
-        'avatar_url': account.avatarUrl,
-      },
+    // Same endpoint and multipart fields as Zedu web. Empty values are left
+    // out so fields the user didn't change are never overwritten.
+    final fields = <String, String>{
+      'full_name': account.name,
+      'display_name': account.displayName,
+      'username': account.username,
+      'phone': account.phoneNumber,
+      'title': account.title,
+      'timezone': account.timezone,
+      'name_pronounciation': account.namePronunciation,
+    }..removeWhere((_, value) => value.isEmpty);
+    await _apiBaseService.patch<Map<String, dynamic>>(
+      path: '/profile',
+      data: FormData.fromMap(fields),
     );
-    return ProfileAccountModel.fromJson(
-      response.data['data'] as Map<String, dynamic>,
-    );
+    return ProfileAccountModel.fromAccount(account);
   }
 
   @override
@@ -156,25 +156,24 @@ class UserProfileRemoteDataSourceImpl implements UserProfileRemoteDataSource {
     required String newPassword,
   }) async {
     if (_config.usesMockData) {
-      AppLogger.d(
-        'Using mock data for POST /profile/security/password',
-        tag: _tag,
-      );
+      AppLogger.d('Using mock data for PUT /auth/change-password', tag: _tag);
       return;
     }
-    await _apiBaseService.post<Map<String, dynamic>>(
-      path: '/profile/security/password',
-      data: {'current_password': currentPassword, 'new_password': newPassword},
+    await _apiBaseService.put<dynamic>(
+      path: '/auth/change-password',
+      data: {'old_password': currentPassword, 'new_password': newPassword},
     );
   }
 
   @override
-  Future<OrganizationProfileModel> getOrganization() async {
+  Future<OrganizationProfileModel> getOrganization({String? orgId}) async {
     if (_config.usesMockData) {
       return OrganizationProfileModel.fromJson(_organization);
     }
+    // The selected workspace's own endpoint returns its real name, type and
+    // country; /profile/organization fails for members of other workspaces.
     final response = await _apiBaseService.get<Map<String, dynamic>>(
-      path: '/profile/organization',
+      path: orgId == null ? '/profile/organization' : '/organisations/$orgId',
     );
     return OrganizationProfileModel.fromJson(
       response.data['data'] as Map<String, dynamic>,
@@ -183,8 +182,9 @@ class UserProfileRemoteDataSourceImpl implements UserProfileRemoteDataSource {
 
   @override
   Future<OrganizationProfileModel> updateOrganization(
-    OrganizationProfile organization,
-  ) async {
+    OrganizationProfile organization, {
+    String? orgId,
+  }) async {
     if (_config.usesMockData) {
       return OrganizationProfileModel(
         id: organization.id,
@@ -193,15 +193,30 @@ class UserProfileRemoteDataSourceImpl implements UserProfileRemoteDataSource {
         country: organization.country,
       );
     }
-    final response = await _apiBaseService.patch<Map<String, dynamic>>(
-      path: '/profile/organization',
-      data: OrganizationProfileModel(
-        id: organization.id,
-        name: organization.name,
-        natureOfBusiness: organization.natureOfBusiness,
-        country: organization.country,
-      ).toJson(),
-    );
+    final data = OrganizationProfileModel(
+      id: organization.id,
+      name: organization.name,
+      natureOfBusiness: organization.natureOfBusiness,
+      country: organization.country,
+    ).toJson();
+    // Like the load and the delete, save to the selected workspace's own
+    // endpoint: /profile/organization is rejected for members of other
+    // workspaces. That endpoint reads the business type from `type` (it
+    // ignores `nature_of_business`), so send it under that name.
+    final response = orgId == null
+        ? await _apiBaseService.patch<Map<String, dynamic>>(
+            path: '/profile/organization',
+            data: data,
+          )
+        : await _apiBaseService.put<Map<String, dynamic>>(
+            path: '/organisations/$orgId',
+            data: {
+              'id': organization.id,
+              'name': organization.name,
+              'type': organization.natureOfBusiness,
+              'country': organization.country,
+            },
+          );
     return OrganizationProfileModel.fromJson(
       response.data['data'] as Map<String, dynamic>,
     );
@@ -240,10 +255,12 @@ class UserProfileRemoteDataSourceImpl implements UserProfileRemoteDataSource {
   }
 
   @override
-  Future<void> deleteOrganization() async {
+  Future<void> deleteOrganization({String? orgId}) async {
     if (_config.usesMockData) return;
+    // Delete the workspace that is shown, not whichever organisation the
+    // profile endpoint resolves to.
     await _apiBaseService.delete<Map<String, dynamic>>(
-      path: '/profile/organization',
+      path: orgId == null ? '/profile/organization' : '/organisations/$orgId',
     );
   }
 

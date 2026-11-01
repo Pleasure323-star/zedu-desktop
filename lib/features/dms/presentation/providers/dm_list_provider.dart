@@ -25,6 +25,61 @@ final selectedDmProvider =
       SelectedDmNotifier.new,
     );
 
+class DmConversationActions {
+  final Set<String> pinnedIds;
+  final Set<String> deletedIds;
+
+  const DmConversationActions({
+    this.pinnedIds = const {},
+    this.deletedIds = const {},
+  });
+
+  DmConversationActions copyWith({
+    Set<String>? pinnedIds,
+    Set<String>? deletedIds,
+  }) => DmConversationActions(
+    pinnedIds: pinnedIds ?? this.pinnedIds,
+    deletedIds: deletedIds ?? this.deletedIds,
+  );
+}
+
+class DmConversationActionsNotifier extends Notifier<DmConversationActions> {
+  @override
+  DmConversationActions build() => const DmConversationActions();
+
+  void togglePinned(String channelId) {
+    final ids = Set<String>.from(state.pinnedIds);
+    ids.contains(channelId) ? ids.remove(channelId) : ids.add(channelId);
+    state = state.copyWith(pinnedIds: ids);
+  }
+
+  /// Deletes the conversation on the server, then hides it from the list
+  /// until the next refresh drops it and discards its draft. Closes it only
+  /// if it's still the open DM. Returns false if the request failed.
+  Future<bool> delete(String channelId) async {
+    final orgId = ref.read(currentOrgIdProvider);
+    if (orgId.isEmpty) return false;
+    try {
+      await ref
+          .read(dmRepositoryProvider)
+          .deleteConversation(orgId: orgId, channelId: channelId);
+    } catch (_) {
+      return false;
+    }
+    state = state.copyWith(deletedIds: {...state.deletedIds, channelId});
+    ref.read(dmDraftStoreProvider).clear(channelId);
+    if (ref.read(selectedDmProvider)?.channelId == channelId) {
+      ref.read(selectedDmProvider.notifier).select(null);
+    }
+    return true;
+  }
+}
+
+final dmConversationActionsProvider =
+    NotifierProvider<DmConversationActionsNotifier, DmConversationActions>(
+      DmConversationActionsNotifier.new,
+    );
+
 class DmListNotifier extends AsyncNotifier<List<DmConversation>> {
   int _currentPage = 1;
   bool _hasMore = true;
