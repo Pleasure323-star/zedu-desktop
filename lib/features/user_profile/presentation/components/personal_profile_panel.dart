@@ -236,6 +236,7 @@ class PersonalProfilePanel extends ConsumerWidget {
                         : 'Not provided',
                     colors: colors,
                     context: context,
+                    copyText: account.phoneNumber,
                   ),
                   const SizedBox(height: 8),
 
@@ -245,6 +246,7 @@ class PersonalProfilePanel extends ConsumerWidget {
                     label: account.email,
                     colors: colors,
                     context: context,
+                    copyText: account.email.trim(),
                     isLink: true,
                   ),
                 ],
@@ -382,6 +384,7 @@ class _ContactRow extends StatelessWidget {
     required this.label,
     required this.colors,
     required this.context,
+    required this.copyText,
     this.isLink = false,
   });
 
@@ -389,6 +392,7 @@ class _ContactRow extends StatelessWidget {
   final String label;
   final AppPalette colors;
   final BuildContext context;
+  final String copyText;
   final bool isLink;
 
   @override
@@ -408,12 +412,36 @@ class _ContactRow extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        InkWell(
-          onTap: () {},
-          borderRadius: BorderRadius.circular(4),
-          child: Icon(Icons.copy_outlined, size: 14, color: colors.textHint),
+        Tooltip(
+          message: 'Copy $label',
+          child: InkWell(
+            onTap: () => _copyContact(buildContext),
+            borderRadius: BorderRadius.circular(4),
+            child: Icon(Icons.copy_outlined, size: 14, color: colors.textHint),
+          ),
         ),
       ],
+    );
+  }
+
+  /// Copies the row's contact value to the clipboard and says so,
+  /// or shows an error when there is nothing to copy.
+  Future<void> _copyContact(BuildContext ctx) async {
+    final text = copyText.trim();
+    if (text.isEmpty) {
+      AppToastService.show(
+        ctx,
+        type: AppToastType.error,
+        message: 'Nothing to copy',
+      );
+      return;
+    }
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!ctx.mounted) return;
+    AppToastService.show(
+      ctx,
+      type: AppToastType.success,
+      message: 'Copied $text',
     );
   }
 }
