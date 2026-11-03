@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:zedu/core/core.dart';
 import 'package:zedu/features/features.dart';
 
@@ -44,13 +46,33 @@ class DmConversationActions {
 }
 
 class DmConversationActionsNotifier extends Notifier<DmConversationActions> {
+  static const _pinsKey = 'pinnedIds';
+
+  /// Bumped on every rebuild (user or org change); an in-flight load must not
+  /// apply state to the next generation's build.
+  int _generation = 0;
+
   @override
-  DmConversationActions build() => const DmConversationActions();
+  DmConversationActions build() {
+    final generation = ++_generation;
+    final store = ref.watch(dmPreferenceStoreProvider);
+    if (store != null) {
+      unawaited(() async {
+        final restored = await store.load(_pinsKey);
+        if (_generation != generation || restored.isEmpty) return;
+        state = state.copyWith(pinnedIds: restored);
+      }());
+    }
+    return const DmConversationActions();
+  }
 
   void togglePinned(String channelId) {
     final ids = Set<String>.from(state.pinnedIds);
     ids.contains(channelId) ? ids.remove(channelId) : ids.add(channelId);
     state = state.copyWith(pinnedIds: ids);
+    // Persist so pins survive a restart; storage failures are ignored.
+    final store = ref.read(dmPreferenceStoreProvider);
+    if (store != null) unawaited(store.save(_pinsKey, ids));
   }
 
   /// Deletes the conversation on the server, then hides it from the list
