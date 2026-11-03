@@ -225,8 +225,9 @@ class _DmChatAreaState extends ConsumerState<DmChatArea> {
   }
 
   void _showActionNotice(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -857,10 +858,16 @@ class _MessageBubble extends ConsumerWidget {
     return parts;
   }
 
-  Widget _buildMessageText(String content, TextStyle style) {
+  Widget _buildMessageText(
+    String content,
+    TextStyle style, {
+    required bool selectable,
+  }) {
     final parts = _splitOnDividers(content);
     if (parts.length == 1) {
-      return RichText(text: _parseRichText(content, style));
+      return selectable
+          ? _selectable(_parseRichText(content, style))
+          : RichText(text: _parseRichText(content, style));
     }
 
     final divider = Divider(
@@ -880,12 +887,20 @@ class _MessageBubble extends ConsumerWidget {
             for (var i = 0; i < parts.length; i++) ...[
               if (i > 0) divider,
               if (parts[i].isNotEmpty)
-                RichText(text: _parseRichText(parts[i], style)),
+                selectable
+                    ? _selectable(_parseRichText(parts[i], style))
+                    : RichText(text: _parseRichText(parts[i], style)),
             ],
           ],
         ),
       ),
     );
+  }
+
+  /// Message text that people can select and copy (SelectionArea gives the
+  /// native desktop selection with a right-click menu and Ctrl/Cmd+C).
+  Widget _selectable(TextSpan textSpan) {
+    return SelectionArea(child: SelectableText.rich(textSpan));
   }
 
   Future<void> _confirmDelete(
@@ -928,6 +943,8 @@ class _MessageBubble extends ConsumerWidget {
     final content = rawContent.replaceAll(RegExp(r'<[^>]*>'), '').trim().isEmpty
         ? ''
         : rawContent;
+    // The plain text a copy action puts on the clipboard: stripped of HTML.
+    final plainContent = rawContent.replaceAll(RegExp(r'<[^>]*>'), '');
     final createdAt =
         DateTime.tryParse(message['created_at']?.toString() ?? '')?.toLocal() ??
         DateTime.now();
@@ -1012,26 +1029,32 @@ class _MessageBubble extends ConsumerWidget {
                   ),
                 ),
                 if (content.isNotEmpty)
-                  _OwnMessageMenu(
-                    enabled: isMe && status == null,
-                    onEdit: () => onEdit(messageId, rawContent),
-                    onDelete: () => _confirmDelete(context, ref, messageId),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isMe
-                            ? colors.primary
-                            : colors.onPrimary.withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: _buildMessageText(
-                        content,
-                        TextStyle(
-                          color: isMe ? Colors.white : colors.textPrimary,
-                          fontSize: 14,
+                  _CopyOnHover(
+                    plainText: plainContent,
+                    alignEnd: isMe,
+                    child: _OwnMessageMenu(
+                      enabled: isMe && status == null,
+                      onEdit: () => onEdit(messageId, rawContent),
+                      onDelete: () => _confirmDelete(context, ref, messageId),
+                      onCopy: () => _copyPlainText(context, plainContent),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isMe
+                              ? colors.primary
+                              : colors.onPrimary.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: _buildMessageText(
+                          content,
+                          TextStyle(
+                            color: isMe ? Colors.white : colors.textPrimary,
+                            fontSize: 14,
+                          ),
+                          selectable: !isMe,
                         ),
                       ),
                     ),
@@ -1229,21 +1252,98 @@ class _AttachmentBubbleList extends StatelessWidget {
   }
 }
 
+/// Copies [text] to the clipboard and says so; shared by the copy affordances
+/// on message bubbles.
+Future<void> _copyPlainText(BuildContext context, String text) async {
+  final value = text.trim();
+  if (value.isEmpty) return;
+  await Clipboard.setData(ClipboardData(text: value));
+  if (!context.mounted) return;
+  AppToastService.show(
+    context,
+    type: AppToastType.success,
+    message: 'Message copied',
+  );
+}
+
+/// Shows a Copy button over the bubble corner on hover and copies the
+/// message's plain text. The selectable text handles the right-click menu;
+/// this button is the one-tap affordance.
+class _CopyOnHover extends StatefulWidget {
+  const _CopyOnHover({
+    required this.child,
+    required this.plainText,
+    required this.alignEnd,
+  });
+
+  final Widget child;
+  final String plainText;
+
+  /// True for your own messages: bubbles align to the row's end there, so the
+  /// button goes after the bubble to sit on its outer corner next to it.
+  final bool alignEnd;
+
+  @override
+  State<_CopyOnHover> createState() => _CopyOnHoverState();
+}
+
+class _CopyOnHoverState extends State<_CopyOnHover> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    Widget button() => Opacity(
+      opacity: _hovered ? 1 : 0,
+      child: SizedBox(
+        width: 26,
+        child: IconButton(
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          constraints: const BoxConstraints(minWidth: 26),
+          tooltip: 'Copy message',
+          iconSize: 14,
+          icon: Icon(Icons.copy_outlined, color: colors.textHint),
+          onPressed: () => _copyPlainText(context, widget.plainText),
+        ),
+      ),
+    );
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: widget.alignEnd
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
+        children: [
+          if (!widget.alignEnd) button(),
+          Flexible(child: widget.child),
+          if (widget.alignEnd) button(),
+        ],
+      ),
+    );
+  }
+}
+
 /// Shows a "more" button on hover, and a right-click or long-press menu, for
-/// your own messages, with Edit and Delete. The long press is for touch input,
-/// where there is no hover or right click.
+/// your own messages, with Edit and Delete (and Copy: the bubble text is not
+/// selectable on own messages so the editor's long-press menu stays primary).
+/// The long press is for touch input, where there is no hover or right click.
 class _OwnMessageMenu extends StatefulWidget {
   const _OwnMessageMenu({
     required this.enabled,
     required this.onEdit,
     required this.onDelete,
     required this.child,
+    this.onCopy,
   });
 
   final bool enabled;
   final VoidCallback? onEdit;
   final VoidCallback onDelete;
   final Widget child;
+  final VoidCallback? onCopy;
 
   @override
   State<_OwnMessageMenu> createState() => _OwnMessageMenuState();
@@ -1272,9 +1372,21 @@ class _OwnMessageMenuState extends State<_OwnMessageMenu> {
                 key: _menuKey,
                 tooltip: 'Message actions',
                 icon: const Icon(Icons.more_horiz, size: 18),
-                onSelected: (value) =>
-                    value == 'edit' ? widget.onEdit?.call() : widget.onDelete(),
+                onSelected: (value) {
+                  if (value == 'edit') {
+                    widget.onEdit?.call();
+                  } else if (value == 'copy') {
+                    widget.onCopy?.call();
+                  } else {
+                    widget.onDelete();
+                  }
+                },
                 itemBuilder: (_) => [
+                  if (widget.onCopy != null)
+                    const PopupMenuItem(
+                      value: 'copy',
+                      child: Text('Copy message'),
+                    ),
                   if (widget.onEdit != null)
                     const PopupMenuItem(
                       value: 'edit',
