@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/services.dart';
 import 'package:zedu/core/core.dart';
 import 'package:zedu/features/features.dart';
 
@@ -28,10 +27,22 @@ class _Repository implements FilesRepository {
   );
 
   @override
-  Future<Result<List<FileFolder>>> fetchFolders({
+  Future<Result<FoldersPage>> fetchFolders({
     required FilesScope view,
     String? parentId,
-  }) async => const Success([]);
+    int page = 1,
+  }) async => const Success(FoldersPage(folders: []));
+
+  @override
+  Future<Result<void>> createFolder({
+    required String name,
+    required String orgId,
+    String? parentId,
+  }) async => const Success(null);
+
+  @override
+  Future<Result<WorkspaceFile>> uploadFile(XFile file) async =>
+      Success(WorkspaceFile(id: 'file-2', name: 'upload.pdf', link: link));
 }
 
 class _Launcher {

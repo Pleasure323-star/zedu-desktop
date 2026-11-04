@@ -37,7 +37,10 @@ void main() {
     tester,
   ) async {
     var saved = false;
-    await openDialog(tester, (_) => saved = true);
+    await openDialog(tester, (_) async {
+      saved = true;
+      return null;
+    });
 
     final closeButton = find.byTooltip('Close');
     expect(closeButton, findsOneWidget);

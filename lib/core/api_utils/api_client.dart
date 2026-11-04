@@ -117,15 +117,19 @@ class ApiBaseService {
     Map<String, String>? headers,
   }) async {
     final normalizedPath = normalizePath(path);
+    final requestHeaders = headersForPath(normalizedPath, headers: headers);
+    if (data is FormData) {
+      // Dio computes and attaches the multipart boundary itself; a hardcoded
+      // application/json Content-Type would strip it and the Go backend
+      // cannot parse the multipart body.
+      requestHeaders.remove('Content-Type');
+    }
     try {
       final response = await _dio.request<T>(
         normalizedPath,
         data: data,
         queryParameters: queryParameters,
-        options: Options(
-          method: method,
-          headers: headersForPath(normalizedPath, headers: headers),
-        ),
+        options: Options(method: method, headers: requestHeaders),
       );
 
       final responseData = response.data;

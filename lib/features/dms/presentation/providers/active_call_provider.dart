@@ -71,17 +71,12 @@ class ActiveCallNotifier extends ChangeNotifier {
   @override
   void notifyListeners() {
     if (_disposed) return;
+    _syncRingtone();
     super.notifyListeners();
   }
 
   /// The ringtone playing for the current incoming call, or null.
   CallRingtone? _ringing;
-
-  @override
-  void notifyListeners() {
-    _syncRingtone();
-    super.notifyListeners();
-  }
 
   /// Rings while a call is coming in and stops on any other state: accepted,
   /// declined, cancelled by the caller, timed out or ended. Stays silent while

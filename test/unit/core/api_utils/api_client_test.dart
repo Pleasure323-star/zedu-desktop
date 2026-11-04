@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import '../../../helpers/helpers.dart';
@@ -133,6 +134,68 @@ void main() {
               ),
         ),
       );
+    });
+
+    test(
+      'a JSON body keeps the explicit application/json Content-Type',
+      () async {
+        String? requestedContentType;
+        server.listen((request) async {
+          requestedContentType = request.headers.value('content-type');
+          await request.drain<void>();
+          request.response
+            ..headers.contentType = ContentType.json
+            ..write('{"ok":true}');
+          request.response.close();
+        });
+        final api = ApiBaseService(
+          config: AppConfig(apiBaseUrl: baseUrl, usesMockData: false),
+        );
+
+        final response = await api.post<Map<String, dynamic>>(
+          path: 'messages',
+          data: <String, dynamic>{'body': 'hello'},
+        );
+
+        expect(response.statusCode, 200);
+        expect(requestedContentType, 'application/json');
+      },
+    );
+
+    test('a FormData body lets Dio attach the multipart boundary', () async {
+      String? requestedContentType;
+      String? firstBodyLine;
+      server.listen((request) async {
+        requestedContentType = request.headers.value('content-type');
+        final bytes = await request.fold<List<int>>(
+          <int>[],
+          (acc, chunk) => acc..addAll(chunk),
+        );
+        firstBodyLine = utf8.decode(bytes).split('\r\n').first;
+        request.response
+          ..headers.contentType = ContentType.json
+          ..write('{"ok":true}');
+        request.response.close();
+      });
+      final api = ApiBaseService(
+        config: AppConfig(apiBaseUrl: baseUrl, usesMockData: false),
+      );
+
+      final form = FormData()
+        ..fields.add(const MapEntry('title', 'photo caption'));
+      final response = await api.post<Map<String, dynamic>>(
+        path: 'users/avatar',
+        data: form,
+      );
+
+      expect(response.statusCode, 200);
+      expect(
+        requestedContentType,
+        startsWith('multipart/form-data; boundary='),
+      );
+      // The server can resolve the boundary because the header carries it.
+      final boundary = requestedContentType!.split('boundary=').last.trim();
+      expect(firstBodyLine, contains(boundary));
     });
   });
 }
