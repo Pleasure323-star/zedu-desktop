@@ -4,7 +4,8 @@ import 'package:zedu/features/features.dart';
 
 class MockChannelRepository extends Mock implements ChannelRepository {}
 
-class FakeChatHistoryNotifier extends ChangeNotifier implements ChatHistoryNotifier {
+class FakeChatHistoryNotifier extends ChangeNotifier
+    implements ChatHistoryNotifier {
   FakeChatHistoryNotifier(this.channelId);
 
   @override
@@ -144,7 +145,7 @@ void main() {
           'channel_id': 'ch-1',
           'status': 'sending',
           'created_at': DateTime.now().toIso8601String(),
-        }
+        },
       ];
 
       await pumpList(tester, const Success(<ChannelMessage>[]));
@@ -164,7 +165,7 @@ void main() {
           'channel_id': 'ch-1',
           'status': 'failed',
           'created_at': DateTime.now().toIso8601String(),
-        }
+        },
       ];
 
       await pumpList(tester, const Success(<ChannelMessage>[]));

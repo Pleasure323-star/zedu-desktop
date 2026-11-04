@@ -17,23 +17,27 @@ class ChannelMessageList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final chatHistory = ref.watch(chatHistoryProvider(channelId));
     final pendingMessages = chatHistory.messages
-        .where((m) =>
-            m['status'] != null &&
-            (m['channel_id'] == channelId || m['is_channel'] == true))
-        .map((m) => ChannelMessage(
-              id: m['id']?.toString(),
-              senderName: (m['sender_name'] as String?)?.isNotEmpty == true
-                  ? m['sender_name'] as String
-                  : chatHistory.currentUserName,
-              avatarUrl: (m['avatar_url'] as String?)?.isNotEmpty == true
-                  ? m['avatar_url'] as String
-                  : chatHistory.currentUserAvatarUrl,
-              text: m['content']?.toString() ?? '',
-              createdAt: DateTime.tryParse(
-                m['created_at']?.toString() ?? '',
-              )?.toLocal(),
-              status: m['status']?.toString(),
-            ))
+        .where(
+          (m) =>
+              m['status'] != null &&
+              (m['channel_id'] == channelId || m['is_channel'] == true),
+        )
+        .map(
+          (m) => ChannelMessage(
+            id: m['id']?.toString(),
+            senderName: (m['sender_name'] as String?)?.isNotEmpty == true
+                ? m['sender_name'] as String
+                : chatHistory.currentUserName,
+            avatarUrl: (m['avatar_url'] as String?)?.isNotEmpty == true
+                ? m['avatar_url'] as String
+                : chatHistory.currentUserAvatarUrl,
+            text: m['content']?.toString() ?? '',
+            createdAt: DateTime.tryParse(
+              m['created_at']?.toString() ?? '',
+            )?.toLocal(),
+            status: m['status']?.toString(),
+          ),
+        )
         .toList();
 
     return ref
@@ -67,10 +71,7 @@ class ChannelMessageList extends ConsumerWidget {
   ) {
     return ListView.builder(
       reverse: true,
-      padding: const EdgeInsets.symmetric(
-        horizontal: 24,
-        vertical: 16,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       itemCount: messages.length,
       itemBuilder: (context, index) {
         final message = messages[index];
@@ -78,8 +79,8 @@ class ChannelMessageList extends ConsumerWidget {
           message: message,
           onRetry: message.id != null
               ? () => ref
-                  .read(chatHistoryProvider(channelId))
-                  .retryMessage(message.id!)
+                    .read(chatHistoryProvider(channelId))
+                    .retryMessage(message.id!)
               : null,
         );
       },
@@ -88,11 +89,7 @@ class ChannelMessageList extends ConsumerWidget {
 }
 
 class ChannelMessageTile extends StatelessWidget {
-  const ChannelMessageTile({
-    super.key,
-    required this.message,
-    this.onRetry,
-  });
+  const ChannelMessageTile({super.key, required this.message, this.onRetry});
 
   final ChannelMessage message;
   final VoidCallback? onRetry;

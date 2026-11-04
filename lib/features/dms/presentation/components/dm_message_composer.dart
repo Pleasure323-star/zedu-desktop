@@ -775,8 +775,9 @@ class DmMessageComposerState extends ConsumerState<DmMessageComposer> {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content:
-                      Text('File ${file.name} does not exist or is invalid.'),
+                  content: Text(
+                    'File ${file.name} does not exist or is invalid.',
+                  ),
                 ),
               );
             }
@@ -797,8 +798,9 @@ class DmMessageComposerState extends ConsumerState<DmMessageComposer> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content:
-                  Text('File ${file.name} could not be attached: invalid file.'),
+              content: Text(
+                'File ${file.name} could not be attached: invalid file.',
+              ),
             ),
           );
         }
@@ -818,19 +820,20 @@ class DmMessageComposerState extends ConsumerState<DmMessageComposer> {
     final picked = result.files
         .where((PlatformFile f) => f.path != null)
         .map((PlatformFile f) {
-      // Validate file path to prevent path traversal and invalid files
-      if (f.path == null ||
-          f.path!.contains('..') ||
-          f.path!.startsWith('/')) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Invalid file path: ${f.path}')),
-          );
-        }
-        return null;
-      }
-      return XFile(f.path!, name: f.name, mimeType: f.extension);
-    }).whereType<XFile>()
+          // Validate file path to prevent path traversal and invalid files
+          if (f.path == null ||
+              f.path!.contains('..') ||
+              f.path!.startsWith('/')) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Invalid file path: ${f.path}')),
+              );
+            }
+            return null;
+          }
+          return XFile(f.path!, name: f.name, mimeType: f.extension);
+        })
+        .whereType<XFile>()
         .toList();
     await addFiles(picked);
   }
